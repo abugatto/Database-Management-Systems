@@ -35,8 +35,6 @@ bool DBMS::usingShell() {
 
 void DBMS::dbmsShell() { //Run within each shell loop
 
-
-	return true;
 }
 
 /*
@@ -52,17 +50,17 @@ void DBMS::runDBMS() { //runs after every shell command
 	//process and execute queue
 	for(int i = 0; i < queryQueue.size(); i++) {
 		//retrieve and pop query from queue
-		shared_ptr<tuple<COMMAND, string>> query = queryQueue.front();
+		QueryPtr query = queryQueue.front();
 		queryQueue.pop();
 
 		//for each state execute command and parse accordingly
 		COMMAND command = get<0>(*query);
 		if(command == USE) {
 			//parse DB name from data
-			string dbName = 																get<1>(*query)
+			string dbName = 															get<1>(*query)
 
 			//set current DB
-			currentDB = databases.at(dbName);
+			currentDB = make_shared<Database>(databases.at(dbName));
 		} else if(command == CREATE_DB) {
 			create(get<1>(*query));
 		} else if(command == CREATE_TB) {
@@ -145,11 +143,15 @@ void DBMS::saveRunMetrics() {
 }
 		
 bool DBMS::create(const string& dbName) {
+	if(databases.find(dbName) == databases.end()) {
+		throw																				REPEATED name
+	}
 
+	databases.emplace(dbName, make_shared<Database>(new Database()));
 }
 
 bool DBMS::drop(const string& dbName) {
-
+	databases.erase(dbName);
 }
 
 #endif
