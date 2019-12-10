@@ -8,7 +8,19 @@
 #define DB_H
 
 //
-#include 
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+#include <map>
+#include <tuple>
+#include <vector>
+#include <queue>
+
+//
+#include "Relation.h"
 
 /*
    Database Class
@@ -18,12 +30,17 @@
 
 class Database {
 	public:
-		Database();
+		//Shared Pointer
+		typedef std::shared_ptr<Database> Ptr;
 
-		create(const std::string& relName, const std::string& data);
-		drop(const std::string& relName);
-		select(const std::string& relName, const std::string& data);
-		alter(const std::string& relName, const std::string& data); //create new table and copy addresses
+		//Database declaration
+		Database() {}
+		~Database();
+
+		void create(const std::string& relName, const std::string& data);
+		void drop(const std::string& relName);
+		void select(const std::string& relName, const std::string& data);
+		void alter(const std::string& relName, const std::string& data); //create new table and copy addresses (use tuple concat and tie)
 
 		//Relational Algebra Operations (using relation names)
 			//joinInner
@@ -33,22 +50,15 @@ class Database {
 		void saveDB();
 		void saveDBMetrics();
 
-		//Shared Pointer
-		typedef std::shared_ptr<Database> Ptr;
-
-		//Shared pointer types for the database (attributes could be anything so we need this)
-		typedef std::shared_ptr<int> IntPtr;
-		typedef std::shared_ptr<float> FloatPtr;
-		typedef std::shared_ptr<char> CharPtr;
-		typedef std::shared_ptr<std::string> StringPtr;
-
-		//Definition for Variables (name, type)
-		typedef std::map<std::string, std::string> Attributes;
-		typedef std::shared_ptr<Attributes> AttributesPtr;
+		friend void processErrors(const int& error);
 
 	private:
+		//I/O streams
+		std::ifstream fin;
+		std::ofstream fout;
+
 		//Definition for Relation Class (pointer because large database can take up all the memory)
 		std::map<std::string, Relation::Ptr> relations; //Pointer for polymorphism of different relations
 };
 
-#endif DB_H
+#endif

@@ -1,0 +1,6 @@
+CXX = g++
+SRCFILES = unitTests.cpp
+CXXFLAGS = -std=c++11 -Wall -g -O0 -o tests
+
+all:
+	$(CXX) $(SRCFILES) $(CXXFLAGS)

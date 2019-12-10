@@ -11,101 +11,137 @@
 
 ////////////////////////////////////////////////////////////////
 //                      Database Functions                    //
-//////////////////////////////////////////////////////////////// 
+////////////////////////////////////////////////////////////////
 
-Database::Database() {
-	//initialize data to dummy so it doesn't error
-	relations.emplace("uninitialized", RelationT<string>("uninitialized"));
+Database::~Database() {
+	saveDB();
+	saveDBMetrics();
 }
 
-Database::create(const string& relName, const string& data) {
-	//If first relation delete dummy 
-	if(relations.find("uninitialized") != relations.end()) {
-
+void Database::create(const std::string& relName, const std::string& data) {
+	//checks for existance
+	if(relations.find(relName) != relations.end()) {
+		std::cout << "\tERROR: Relation name [" << relName << "] is taken!" << std::endl;
+		return;
 	}
 
-	//parse data into vector of string varname, type string, and int size
-	vector<string, string, int> data;
+	//parse data into vector of string varname, string typename, and int size
+	Relation::Attributes parsedData;
 
-	while() {
+	//parse data into attribute tokens (var type(size), ..., var type(size))
+	char* attr = std::strtok(const_cast<char*>(data.data()), ",;");
+	bool first = true;
+	while(attr) {
+		std::string var, type;
+		int size = 0;
 
-	}
+		//if beginning of list
+		std::string attribute = attr;
+		if(first) {
+			if(attribute[0] == '(') { //remove "("
+				attribute = attribute.substr(1, attribute.length());
+			} else if(attribute[1] == '(') { //remove "("
+				attribute = attribute.substr(2, attribute.length());
+			}
 
-	//create a concatinated tuple of the variables and add type to vector
-	for(int i = 0; i < numVars; i++) { //create dummy tuple of input form and make shared_ptr from that
-		if(type == "int") {
-
-		} else if(type == "float") {
-
-		} else if(type == "char") {
-
-		} else if(type == "varchar") { //string type
-
-		} else {
-			throw																					;
+			first = false;
 		}
+
+		//if space first
+		if(attribute[0] == ' ') {
+			attribute = attribute.substr(1, attribute.length());
+		}
+
+		int len = attribute.length();
+		if(attribute.substr(len-1, len) == ")") { //if end of list
+			if(attribute.substr(len-2, len-1) == "))") { //if varchar
+				attribute = attribute.substr(0, len-2);
+
+				std::size_t it = attribute.find("("); //find iterator to "("
+				size = std::stoi(attribute.substr(it+1, attribute.length()));
+				attribute = attribute.substr(0, it); //removes size and "("
+			} else { //if varchar
+				attribute = attribute.substr(0, len-1); //remove ")"
+			}
+		}
+
+		//parse attribute into (var,type,size)
+		std::istringstream ss(attribute + ";");
+		std::getline(ss, var, ' ');
+		std::getline(ss, type, ';');
+
+		parsedData.emplace_back(std::make_tuple(var, type, size));
+
+		//get next attribute
+		attr = std::strtok(nullptr, ",;");
 	}
-
-	//use concatinated tuple and decltype(tuple) to instantiate relation
-
 
 	//Instantiate the relation implicitly from temp tuple 
-	relations.emplace(relName, Relation<decltype(data)>);
+	Relation::Ptr rel(new Relation(parsedData));
+	relations.emplace(relName, rel);
+
+	std::cout << "\tRelation [" << relName << "] created." << std::endl;
 }
 
-Database::drop(const string& relName) {
+void Database::drop(const std::string& relName) {
 	//checks for existance
 	if(relations.find(relName) == relations.end()) {
-		throw																					UNINIT;
+		std::cout << "\tERROR: Relation name [" << relName << "] does not exist!" << std::endl;
 		return;
 	}
 
 	relations.erase(relName); //shared pointer should deconstruct on removal
+
+	std::cout << "\tRelation [" << relName << "] removed." << std::endl;
 }
 
-Database::select(const string& relName, const string& data) { //works for single
+void Database::select(const std::string& relName, const std::string& data) { //works for single
 	//checks for existance
 	if(relations.find(relName) == relations.end()) {
-		throw																					UNINIT;
+		std::cout << "\tERROR: Relation name [" << relName << "] does not exist!" << std::endl;
 		return;
 	}
 
-	//Check for what data is requested
-	if(data == "*") {
-		//print all data from relation
-		relations.at(relName)->printRelation();
+	//parse data into attribute tokens (var type(size), ..., var type(size))
+	Relation::Attributes parsedData;
+	if(data != "*") {
+		std::istringstream ss(data + ',');
+		std::string var;
+		while(std::getline(ss, var, ',')) {
+			//if space first
+			if(var[0] == ' ') {
+				var = var.substr(1, var.length());
+			}
+
+			parsedData.emplace_back(std::make_tuple(var, "", 0));
+		}
+
+		// std::string var, type;
+		// int size;
+		// std::tie(var, type, size) = parsedData;
+		// relations.at(relname)->printRelation();
 	} else {
-		throw																					INVALID;
-	}/*else {
-		//parse query
-
-
-		//Process Query
-
-
-		// //print all requesteddata from relation
-		relations.at(relName)->printRelation();
-	}*/
+		relations.at(relName)->print(relName);
+	}
 }
 
-Database::alter(const string& relName, const string& data) { //create new table and copy addresses
+void Database::alter(const std::string& relName, const std::string& data) { //Concatinate each tuple with new attribute
 	//checks for existance
-	if(relations.find(relName) == relations.end()) {
-		throw																					UNINIT;
+	if(relations.find(relName) != relations.end()) {
+		std::cout << "\tERROR: Relation name [" << relName << "] does not exist!" << std::endl;
 		return;
 	}
 
-	//parse new data
-	string varName = 
-	string varType = 
+	//parse data into attribute tokens (var type(size), ..., var type(size))
+	std::istringstream ss(data + ";");
 
-	//Get types of relation and add new type
-	auto types = relations.at(relName)->getTypes();
+	//parse attribute into (var,type,size)
+	std::string varName, varType;
+	std::getline(ss, varName, ' ');
+	std::getline(ss, varType, ';');
 
-	types->emplace(varName, varType);
-
-	//Concat null tuple of type varType into each tuple of relation
-
+	//Add new Attribute
+	relations.at(relName)->alterADD(std::make_tuple(varName, varType, 0));
 }
 
 ////////////////////////////////////////////////////////////////
@@ -114,7 +150,7 @@ Database::alter(const string& relName, const string& data) { //create new table 
 
 void Database::saveDB() {
 	//OPEN FILESTREAM AND ADD EACH RELATION
-
+	return;
 }
 
 void Database::saveDBMetrics() {

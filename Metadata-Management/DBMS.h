@@ -8,15 +8,27 @@
 #define DBMS_H
 
 //
-#include 
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
 
-using namespace std;
+#include <map>
+#include <tuple>
+#include <vector>
+#include <queue>
+
+//
+#include "Database.h"
+
+void processErrors(const int& error);
 
 /*
    Enumerated type for SQL commands
 */
 
-enum COMMAND {USE, CREATE_DB, CREATE_TB, DROP_DB, DROP_TB, SELECT, ALTER, EXIT};
+enum COMMAND {READ, USE, CREATE_DB, CREATE_TB, DROP_DB, DROP_TB, SELECT, ALTER, EXIT};
 
 /*
    Database Management System (DBMS) Class
@@ -24,34 +36,44 @@ enum COMMAND {USE, CREATE_DB, CREATE_TB, DROP_DB, DROP_TB, SELECT, ALTER, EXIT};
 
 class DBMS {
 	public:
-		DBMS(ifstream& fin, const char *argv[]);
+		DBMS(std::ifstream& fin, char** argv);
 		~DBMS(); //saves databases to file
 
 		bool usingShell();
 		void dbmsShell();
 		void runDBMS(); //runs after every shell command
 
+		friend void processErrors(const int& error);
+
 	private:
-		void sqlQueryParse(); //creates queue of queries. Error if bad syntax (later will parse nested statements and put on stack)
-		void sqlFileParse(); //creates queue of queries
-			
+		void sqlQueryParse(const std::string& input); //creates queue of queries in real time. Error if bad syntax (later will parse nested statements and put on stack)
+		void sqlFileParse(); //creates queue of queries from file
+
 		void saveDBMS();
+		void loadDBMS();
 		void saveRunMetrics();
 		
-		bool create(const string& dbName);
-		bool drop(const string& dbName);
+		void create(const std::string& dbName);
+		void drop(const std::string& dbName);
 
-		bool runInShell = true;
-		ifstream fin;
-		std::string filepath;
+		//I/O streams
+		std::ifstream fin;
+		std::ofstream fout;
 
-		typedef std::tuple<COMMAND, std::string> Query;
+		//parameters
+		int runInShell = 0;
+		std::string sqlFilepath;
+		std::string saveFilepath;
+		std::string metricsFilepath;
+
+		//Query strictures
+		typedef std::tuple<COMMAND, std::string, std::string> Query;
 		typedef std::shared_ptr<Query> QueryPtr;
 		std::queue<QueryPtr> queryQueue; //If nested statements than may need stack for 'recursion'
 
-		uint numDB = 0;
+		//DB structures
 		Database::Ptr currentDB; //shared pointer to current database
-		std::map<std::string, Database> databases;
+		std::map<std::string, Database::Ptr> databases;
 };
 
 #endif

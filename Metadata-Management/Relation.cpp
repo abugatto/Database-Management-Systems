@@ -13,21 +13,69 @@
 //                      Relation Functions                    //
 ////////////////////////////////////////////////////////////////
 
-template<typename Tuple>
-RelationT::RelationT(const std::tuple<Args...>& data, const Database::AttributesPtr& vars) {
-	relation.push_back(data);
-	attributes = vars;
+Relation::Relation(const Attributes& vars) {
+	variables = vars;
 }
 
-int RelationT::getCardinality() {
+void Relation::insertTuple(Tuple& tuple) {
+	//check types
+	bool validTuple = true;
+	if(tuple.size() != variables.size()) {
+		validTuple = false;
+	}
+
+	int it = 0;
+	for(auto variable : variables) {
+		if(tuple.at(it).getType() != std::get<1>(variable)) {
+			validTuple = false;
+		}
+
+		it++;
+	}
+
+	// if() { if any variables not initialized init them
+	// 	//make temp node to insert into each tuple
+	// 	std::shared_ptr<TupleNode> temp;
+	// 	if(varType == "bool") {
+	// 		temp = std::make_shared<TupleNode>(BoolTupleNode());
+	// 	} else if(varType == "int") {
+	// 		temp = std::make_shared<TupleNode>(IntTupleNode());	
+	// 	} else if(varType == "float") {
+	// 		temp = std::make_shared<TupleNode>(FloatTupleNode());
+	// 	} else if(varType == "char") {
+	// 		temp = std::make_shared<TupleNode>(CharTupleNode(size));
+	// 	} else if(varType == "varchar") {
+	// 		temp = std::make_shared<TupleNode>(StringTupleNode(size));
+	// 	}
+
+	// 	//Insert node into each tuple
+	// 	for(std::size_t i = 0; i < relation.size(); i++) {
+	// 		relation.at(i).insertNode(temp);
+	// 	}
+	// }
+
+	//Add or throw error
+	if(validTuple) {
+		relation.emplace_back(tuple);
+	} else {
+		std::cout << "\n\nERROR: INVALID TUPLE" << std::endl << std::endl;
+	}
+}
+
+void Relation::alterADD(const Attribute& attribute) { //add attribute & init zeros
+	//Insert into variables
+	variables.emplace_back(attribute);
+}
+
+int Relation::getCardinality() {
 	return relation.size(); //size of vector
 }
 
-int RelationT::getDegree() {
-	return attributes.size(); //size of tuple
+int Relation::getDegree() {
+	return variables.size(); //size of tuple
 }
 
-Database::Variables RelationT::getVariables() {
+Relation::Attributes Relation::getAttributes() {
 	return variables;
 }
 
@@ -35,45 +83,41 @@ Database::Variables RelationT::getVariables() {
 //                  Save and Print Functions                  //
 //////////////////////////////////////////////////////////////// 
 
-void RelationT::printRelation() { //assume that each tuple type is printable with cout
-	//Print Table Formatting and Attributes
+void Relation::print(const std::string& relName) {
+	//Print table data
+	std::cout << "\t[" << relName << std::endl;
+			//Print Table Formatting and Attributes
+	std::cout << "\t\t[";
+	for(std::size_t i = 0; i < variables.size(); i++) {
+		std::string var, type;
+		int size = 0;
+		std::tie(var, type, size) = variables.at(i);
 
+		std::cout << var << "|" << type;
+		if(type == "char" || type == "varchar") {
+			std::cout << "(" << std::to_string(size) << ")";
+		}
 
-	//Print Table Data
-	if() {
-		
+		if(i == getDegree()-1) {
+			std::cout << "]" << std::endl; 
+		} else {
+			std::cout << ", ";
+		}
 	}
+
+	for(std::size_t i = 0; i < getCardinality(); i++) {
+		relation.at(i).print();
+	}
+
+	std::cout << "\t]" << std::endl;
 }
 
-void RelationT::saveRelation() { //assume that each tuple type is printable with cout
-	//CURRENTLY JUST SAVE VARIABLES
-
-}
-
-void RelationT::saveRelationMetrics() {
+void Relation::saveRelation(std::ifstream& fout) { //assume that each tuple type is printable with cout
 	return;
 }
 
-////////////////////////////////////////////////////////////////
-//                   Tuple Print Functions                    //
-////////////////////////////////////////////////////////////////
-
-template<class Tuple, std::size_t N>
-static void RelationT::TuplePrinter::print(const Tuple& t) {
-	TuplePrinter<Tuple, N-1>::print(t);
-	std::cout << ", " << std::get<N-1>(t);
-}
- 
-template<class Tuple>
-static void RelationT::TuplePrinter::print(const Tuple& t) {
-    std::cout << std::get<0>(t);
-}
-
-template<class... Args>
-void RelationT::printTuple(const std::tuple<Args...>& t) {
-    std::cout << "(";
-    TuplePrinter<decltype(t), sizeof...(Args)>::print(t); //recursively prints each attribute of the tuple
-    std::cout << ")\n";
+void Relation::saveRelationMetrics() {
+	return;
 }
 
 #endif

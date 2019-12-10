@@ -9,24 +9,38 @@
 
 //
 #include <iostream>
-#include
+#include <cstdlib>
+#include <typeinfo>
+#include <fstream>
+#include <string>
+
+#include <map>
+#include <tuple>
+#include <vector>
+#include <queue>
+
+//
+#include "Tuple.h"
 
 /*
-   Relation class 
-
-   Stored in memory as ->[attribute map | vector of address tuples]
+	Relation class 
+	-Uses Polumorphism to store variadic instances of RelationT in the same container 
+	-Stored in memory as ->[attribute map | vector of address tuples]
 */
 
 //Use polymorphism to make enclosures of variable Relations
 class Relation {
 	public:
-		typedef std::shared_ptr<Table> Ptr;
-};
+		//Definition for Variables (name, type)
+		typedef std::shared_ptr<Relation> Ptr;
 
-template<class Args...> //shared pointers of types
-class RelationT : public Relation { //dynamic table of different types (abstracts away types
-	public:
-		RelationT(const std::tuple<Args...>& data, const Database::AttributesPtr& vars);
+		typedef std::tuple<std::string, std::string, int> Attribute;
+		typedef std::vector<Attribute> Attributes;
+
+		//Definition of Table
+		typedef std::vector<Tuple> Table;
+
+		Relation(const Attributes& vars);
 
 		//Relational Algebra
 			//Set Operations (overload)
@@ -46,32 +60,27 @@ class RelationT : public Relation { //dynamic table of different types (abstract
 				//max
 				//min
 
+		void insertTuple(Tuple& tuple);
+		void alterADD(const Attribute& attribute); //add attribute & init zeros
+		// void alterMODIFY();
+
 		int getCardinality();
 		int getDegree();
-		Database::AttributesPtr getVariables();
+		Attributes getAttributes();
 
-		void printRelation();
-		void saveRelation();
+		//May need memory management for B-tree (mapreduce for distributed?)
+		void print(const std::string& relName);
+		// void printRelation(const std::vector<int> indices);
+		void saveRelation(std::ifstream& fout);
 		void saveRelationMetrics();
 
+		friend void processErrors(const int& error);
+
 	private:
-		//Declare relation data
-		Database::Attributes attributes; //(varname, type)
-		std::vector<std::tuple<Args...>> relation; //use array of tuple smart pointers for table
-
-		//Tuple print helper functions for recursive print function
-		template<class Tuple, std::size_t N>
-		struct TuplePrinter {
-			static void print(const Tuple& t); //static allows access without instance
-		};
-
-		template<class Tuple>
-		struct TuplePrinter<Tuple, 1> {
-    		static void print(const Tuple& t);
-		};
-
-		//uses recursive helper struct to print tuple
-		void printTuple(const std::tuple<Args...>& t);
+		Attributes variables;
+		Table relation;//use array of tuple smart pointers for table
+		//use B-tree of TupleNode pointers for search
 };
 
 #endif
+
