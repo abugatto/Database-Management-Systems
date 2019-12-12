@@ -290,15 +290,15 @@ void Relation::remove(const std::string relName, const Relation::Condition& cond
 	}
 }
 
-// //Inner join
-// Relation::Ptr Relation::innerJoin(std::string& condition, const Relation::Ptr& rel2) {
+//Inner join
+Relation::Ptr Relation::innerJoin(std::string& condition, const Relation::Ptr& rel2) {
 	
-// }
+}
 
-// //Outer join
-// Relation::Ptr Relation::outerJoin(std::string& condition, const Relation::Ptr& rel2) {
+//Outer join
+Relation::Ptr Relation::outerJoin(std::string& condition, const Relation::Ptr& rel2) {
 
-// }
+}
 
 ////////////////////////////////////////////////////////////////
 //                  Save and Print Functions                  //

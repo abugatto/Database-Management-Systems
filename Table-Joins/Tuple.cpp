@@ -92,20 +92,16 @@ void Tuple::swapNodes(const int& idx1, const int& idx2) {
 void Tuple::print(const std::vector<int>& indices) {
 	std::cout << "[";
 	for(std::size_t i = 0; i < data.size(); i++) {
-		//if current index allowed
-		bool allowed = false;
-		if(!indices.empty()) {
-			for(std::size_t j = 0; j < indices.size(); j++) {
-				if(indices.at(j) == i) {
-					allowed = true;
-					break;
-				}
+		//if current index not banned
+		bool isBanned = false;
+		for(std::size_t j = 0; j < indices.size(); j++) {
+			if(indices.at(j) == i) {
+				isBanned = true;
+				break;
 			}
-		} else {
-			allowed = true;
 		}
 
-		if(allowed) {
+		if(!isBanned) {
 			data.at(i)->print();
 
 			if(i == data.size()-1) {

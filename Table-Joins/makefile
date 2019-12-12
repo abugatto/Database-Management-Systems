@@ -1,9 +1,11 @@
+
 #Makefile
 CXX = g++
 SRCFILES = runDBMS.cpp DBMS.cpp Database.cpp Relation.cpp Tuple.cpp
-CXXFLAGS = -std=c++11 -Wall -g -pthread -O0 -o P1
+CXXFLAGS = -std=c++11 -Wall -g -O0 -o P3
 
 all:
 	$(CXX) $(SRCFILES) $(CXXFLAGS)
 
-#USE:		./P1 true PA1_test.sql dbmsSave.txt dbmsMetrics.txt
+
+#USE:		./P3 true PA3_test.sql dbmsSave.txt dbmsMetrics.txt

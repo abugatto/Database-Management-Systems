@@ -58,11 +58,8 @@ class Relation {
 		void update(const std::string relName, const Condition& set, const Condition& condition);
 		void remove(const std::string relName, const Condition& condition);
 
-		// //Relational Algebra Operations (using relation names)
-		// //Inner join
-		// Relation::Ptr innerJoin(std::string& condition, const Relation::Ptr& rel2);
-		// //Outer join
-		// Relation::Ptr outerJoin(std::string& condition, const Relation::Ptr& rel2);
+		Relation::Ptr innerJoin(std::string& condition, const Relation::Ptr& rel2);
+		Relation::Ptr outerJoin(std::string& condition, const Relation::Ptr& rel2);
 
 		//May need memory management for B-tree (mapreduce for distributed?)
 		void print(const std::string& relName, const std::vector<std::string>& varNames, const Condition& condition);

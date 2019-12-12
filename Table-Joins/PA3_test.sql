@@ -14,7 +14,7 @@ insert into Sales values(1,344);
 insert into Sales values(1,355);
 insert into Sales values(2,544);
 
--- The following will miss Gill (2 points)
+-- The following will miss Gill (2 points) (put E/S into alias vector)
 select * 
 from Employee E, Sales S 
 where E.id = S.employeeID;
