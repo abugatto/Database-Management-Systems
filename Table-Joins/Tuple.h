@@ -55,6 +55,9 @@ class Tuple { //Nodes are immutable
 	public: 
 		typedef std::shared_ptr<Tuple> Ptr;
 
+		//concat operator
+		Tuple operator+(Tuple& tupl);
+
 		int size();
 		TupleNode at(const int& i);
 		void insertNode(TupleNode::Ptr& node);

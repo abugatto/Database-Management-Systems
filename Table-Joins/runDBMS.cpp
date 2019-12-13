@@ -9,6 +9,8 @@
 
 //
 #include <iostream>
+#include <thread>
+#include <mutex>
 #include <cstdlib>
 #include <fstream>
 #include <string>
@@ -22,7 +24,10 @@
 #include "DBMS.h"
 
 /*
-   Main Function (P4: Server waits for clients and inits threads for each)
+   Main Function 
+
+   (P4: Client/Server is file i/o. Server reads commands from file until exit. If transaction skip other users.)
+   (server generates username file. client grabs one and posts db creation. server posts output in file.)
 */
 int main(int argc, char** argv) {
 	try {
@@ -30,7 +35,8 @@ int main(int argc, char** argv) {
 		std::ifstream fin;
 		DBMS dbms(fin, argv);
 
-		//Run shell if requested otherwise run sql file
+		//make thread callback
+		//Run shell if requested otherwise run sql fileExists
 		std::string fileExists = argv[1];
 		if(fileExists == "true") {
 			while(dbms.usingShell()) {

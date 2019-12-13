@@ -30,6 +30,10 @@ void processErrors(const int& error) {
 	if(error == -4) {
     	std::cout << "ERROR CODE -4: EMPTY QUEUE" << std::endl;
   	}
+
+  	if(error == -5) {
+    	std::cout << "ERROR CODE -6: INVALID JOIN" << std::endl;
+  	}
 }
 
 ////////////////////////////////////////////////////////////////
@@ -207,30 +211,15 @@ void DBMS::runDBMS() { //runs after every shell command
 				q = q.substr(1,q.length());
 			}
 
-			//get rid of ";"
-			std::string temp = q;
-			int idx = 0;
-			for(std::size_t i = 0; i < q.length(); i++) {
-				if(q[i] == ';' || q[i] == ' ') {
-					temp = temp.substr(0, i-idx) + temp.substr(i-idx+1, temp.length());
-					idx++;
-				}
-			}
-
 			//parse tbName and data
-			std::istringstream ss(temp);
+			std::istringstream ss(q);
 
-			std::string tbName, data, junk;
-			std::getline(ss, tbName, '|');
+			std::string tbNames, data, junk;
+			std::getline(ss, tbNames, '|');
 			std::getline(ss, data, '@');
 
-			//if all set to "*"
-			if(data.find("*") != std::string::npos) {
-				data = "*";
-			}
-
 			//load table and print 
-			currentDB->select(tbName, data);
+			currentDB->select(tbNames, data);
 		} else if(command == UPDATE) {
 			//break to shell if database is not loaded 
 			if(!currentDB) {
@@ -308,41 +297,41 @@ void DBMS::sqlQueryParse(const std::string& input) { //creates queue of queries
 	std::getline(ss, queryCommand, ' ');
 	if(queryCommand.find("READ") != std::string::npos || input.find("read") != std::string::npos) {
 		command = READ;
-	} else if(queryCommand == "USE" || queryCommand == "use") {
+	} else if(queryCommand.find("USE") != std::string::npos || queryCommand.find("use") != std::string::npos) {
 		command = USE;
-	} else if(queryCommand == "CREATE" || queryCommand == "create") {
+	} else if(queryCommand.find("CREATE") != std::string::npos || queryCommand.find("create") != std::string::npos) {
 		std::string createCommand;
-		std::getline(ss, createCommand, ' ');
+		std::getline(ss, createCommand, ' ');											
 
 		//Check if creating database or table
-		if(createCommand == "DATABASE" || queryCommand == "database") {
+		if(createCommand.find("DATABASE") != std::string::npos || createCommand.find("database") != std::string::npos) {
 			command = CREATE_DB;
-		} else if(createCommand == "TABLE" || queryCommand == "table") {
+		} else if(createCommand.find("TABLE") != std::string::npos || createCommand.find("table") != std::string::npos) {
 			command = CREATE_TB;
 		} else { //if neither
 			throw -3;
 		}
-	} else if(queryCommand == "DROP" || queryCommand == "drop") {
+	} else if(queryCommand.find("DROP") != std::string::npos || queryCommand.find("drop") != std::string::npos) {
 		std::string dropCommand;
 		std::getline(ss, dropCommand, ' ');
 
 		//Check if dropping database or table
-		if(dropCommand == "DATABASE" || queryCommand == "database") {
+		if(dropCommand.find("DATABASE") != std::string::npos || dropCommand.find("database") != std::string::npos) {
 			command = DROP_DB;
-		} else if(dropCommand == "TABLE" || queryCommand == "table") {
+		} else if(dropCommand.find("TABLE") != std::string::npos || dropCommand.find("table") != std::string::npos) {
 			command = DROP_TB;
 		} else { //if neither
 			throw -3;
 		}
-	} else if(queryCommand == "INSERT" || queryCommand == "insert") {
+	} else if(queryCommand.find("INSERT") != std::string::npos || queryCommand.find("insert") != std::string::npos) {
 		command = INSERT;
-	} else if(queryCommand == "SELECT" || queryCommand == "select") {
+	} else if(queryCommand.find("SELECT") != std::string::npos || queryCommand.find("select") != std::string::npos) {
 		command = SELECT;
-	} else if(queryCommand == "UPDATE" || queryCommand == "update") {
+	} else if(queryCommand.find("UPDATE") != std::string::npos || queryCommand.find("update") != std::string::npos) {
 		command = UPDATE;
-	} else if(queryCommand == "DELETE" || queryCommand == "delete") {
+	} else if(queryCommand.find("DELETE") != std::string::npos || queryCommand.find("delete") != std::string::npos) {
 		command = DELETE;
-	} else if(queryCommand == "ALTER" || queryCommand == "alter") {
+	} else if(queryCommand.find("ALTER") != std::string::npos || queryCommand.find("alter") != std::string::npos) {
 		std::getline(ss, data, ' ');
 		std::getline(ss, data, ';');
 
@@ -358,7 +347,7 @@ void DBMS::sqlQueryParse(const std::string& input) { //creates queue of queries
 		if(command == CREATE_TB) {
 			//parse table name and data tokens
 			std::string tbName;
-			std::getline(ss, tbName, ' ');
+			std::getline(ss, tbName, '(');
 			std::getline(ss, data, ';');
 
 			data = tbName + " " + data;
@@ -392,6 +381,10 @@ void DBMS::sqlQueryParse(const std::string& input) { //creates queue of queries
 				std::size_t itW = tbName.find("where");
 				cond = tbName.substr(itW+6, tbName.length()) + "|";
 				tbName = tbName.substr(0, itW-2);
+			}else if(tbName.find("on") != std::string::npos) {
+				std::size_t itO = tbName.find("on");
+				cond = tbName.substr(itO+3, tbName.length()) + "|";
+				tbName = tbName.substr(0, itO-2);
 			}
 
 			data = tbName + "|" + cond + data;
@@ -471,12 +464,11 @@ void DBMS::sqlFileParse() { //creates queue of queries
 	//parse into a list of queries
 	std::queue<std::string> lineQueue;
 
-	bool exitLoop = false;
-	while(!exitLoop) {
+	for(;;) {
 		//read in line until end line
 		std::string input;
 		std::getline(fin, input);
-		if(input[0] == '\n' || input[0] == 13) { //ASCII 13 is carriage return
+		if(input[0] == '\n' || input[0] == 13 || input.substr(0,2) == "--") { //ASCII 13 is carriage return
 			continue; 
 		}
 
@@ -484,19 +476,6 @@ void DBMS::sqlFileParse() { //creates queue of queries
 		if(input.find(".EXIT") != std::string::npos || input.find(".exit") != std::string::npos) {
 			lineQueue.emplace(".EXIT"); 
 			break;
-		}
-
-		//Check for comment or empty line
-		std::string comment = input.substr(0,2);
-		while(comment == "--" || input[0] == '\n' || (input[0] == 13)) {
-			std::getline(fin, input);
-			comment = input.substr(0,1);
-
-			//check for exit command
-			if(input.find(".EXIT") != std::string::npos || input.find(".exit") != std::string::npos) {
-				lineQueue.emplace(".EXIT"); 
-				exitLoop = true;
-			}
 		}
 
 		//if multiline query (comments filtered out by now)
@@ -538,18 +517,8 @@ void DBMS::sqlFileParse() { //creates queue of queries
 			}
 		}
 
-		//if line isnt exit break into queries
-		if(!exitLoop) {
-			//break into queries
-			char* queryToken = std::strtok(const_cast<char*>(input.data()), ";");
-			while(queryToken != nullptr && queryToken[0] != 13) {
-				//append query to queue
-				lineQueue.emplace((std::string) queryToken + ";"); 
-
-				//Get next query if available
-				queryToken = strtok(nullptr, ";");
-			}
-		}
+		//push query onto queue
+		lineQueue.emplace(input);
 	}
 
 	//parse queries into queue

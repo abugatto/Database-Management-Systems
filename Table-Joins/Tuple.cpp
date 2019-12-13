@@ -67,6 +67,24 @@ bool TupleNode::operator==(const TupleNode& node) {
 
 ////////////////////////////////////////////////////////////////
 
+//concat operator
+Tuple Tuple::operator+(Tuple& tupl) {
+	Tuple newTuple;
+	for(std::size_t i = 0; i < this->size(); i++) {
+		TupleNode::Ptr temp = std::make_shared<TupleNode>(this->at(i));
+
+		 newTuple.insertNode(temp);
+	}
+
+	for(std::size_t i = 0; i < tupl.size(); i++) {
+		TupleNode::Ptr temp = std::make_shared<TupleNode>(tupl.at(i));
+
+		 newTuple.insertNode(temp);
+	}
+
+	return newTuple;
+}
+
 int Tuple::size() {
 	return data.size();
 }

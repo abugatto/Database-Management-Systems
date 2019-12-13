@@ -41,11 +41,11 @@ class Database {
 		void drop(const std::string& relName);
 
 		void select(const std::string& relName, const std::string& data);
-		void alter(const std::string& relName, const std::string& data);
+		void alter(const std::string& relName, const std::string& data);	//LOCK
 
-		void insert(const std::string& relName, const std::string& data);
-		void update(const std::string& relName, const std::string& data);
-		void remove(const std::string& relName, const std::string& data);
+		void insert(const std::string& relName, const std::string& data);	//LOCK
+		void update(const std::string& relName, const std::string& data);	//LOCK
+		void remove(const std::string& relName, const std::string& data);	//LOCK
 
 		void saveDB();
 		void saveDBMetrics();

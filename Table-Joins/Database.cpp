@@ -94,14 +94,198 @@ void Database::drop(const std::string& relName) {
 }
 
 void Database::select(const std::string& relName, const std::string& data) { //works for single
-	//checks for existance
-	if(relations.find(relName) == relations.end()) {
-		std::cout << "\tERROR: Relation name [" << relName << "] does not exist!" << std::endl;
-		return;
+	//parse relName for joins
+	std::vector<std::tuple<std::string, std::string>> relNames; //tuple[alias|name]
+	JOIN join = NAJ;
+	if(relName.find(",") != std::string::npos || relName.find("join") != std::string::npos) {
+		if(relName.find(",") != std::string::npos) {
+			//set JOIN
+			join = INNER;
+
+			//parse join
+			std::istringstream ss(relName + ",");
+
+			std::string tblName;
+			while(std::getline(ss, tblName, ',')) {
+				if(tblName[0] == ' ') {
+					tblName = tblName.substr(1, tblName.length());
+				}
+
+				std::istringstream ssNA(tblName + "|");
+
+				std::string name, alias;
+				std::getline(ssNA, name, ' ');
+				std::getline(ssNA, alias, '|');
+
+				if(alias[alias.length()-1] == ' ') {
+					alias = alias.substr(0, alias.length()-1);
+				}
+
+				relNames.emplace_back(std::make_tuple(alias, name));
+			}
+		} else {
+			if(relName.find("inner join") != std::string::npos) {
+				//set JOIN
+				join = INNER;
+
+				//parse join
+				std::string ij = "inner join";
+				std::string name1, name2;
+				std::size_t itJ = relName.find(ij);
+
+				name1 = relName.substr(0, itJ-1);
+				name2 = relName.substr(itJ + ij.length() + 1, relName.length());
+
+				//parse join
+				std::istringstream ss(name1 + "," + name2);
+
+				std::string tblName;
+				while(std::getline(ss, tblName, ',')) {
+					if(tblName[0] == ' ') {
+						tblName = tblName.substr(1, tblName.length());
+					}
+
+					std::istringstream ssNA(tblName + "|");
+
+					std::string name, alias;
+					std::getline(ssNA, name, ' ');
+					std::getline(ssNA, alias, '|');
+
+					if(alias[alias.length()-1] == ' ') {
+						alias = alias.substr(0, alias.length()-1);
+					}
+
+					relNames.emplace_back(std::make_tuple(alias, name));
+				}
+			} else if(relName.find("outer join") != std::string::npos) {
+				//set JOIN
+				join = LEFT_OUTER;
+
+				//parse join
+				std::string oj = "outer join";
+				std::string name1, name2;
+				std::size_t itJ = relName.find(oj);
+
+				name1 = relName.substr(0, itJ-1);
+				name2 = relName.substr(itJ + oj.length() + 1, relName.length());
+
+				//parse join
+				std::istringstream ss(name1 + "," + name2);
+
+				std::string tblName;
+				while(std::getline(ss, tblName, ',')) {
+					if(tblName[0] == ' ') {
+						tblName = tblName.substr(1, tblName.length());
+					}
+
+					std::istringstream ssNA(tblName + "|");
+
+					std::string name, alias;
+					std::getline(ssNA, name, ' ');
+					std::getline(ssNA, alias, '|');
+
+					if(alias[alias.length()-1] == ' ') {
+						alias = alias.substr(0, alias.length()-1);
+					}
+
+					relNames.emplace_back(std::make_tuple(alias, name));
+				}
+			} else if(relName.find("left outer join") != std::string::npos) {
+				//set JOIN
+				join = LEFT_OUTER;
+
+				//parse join
+				std::string loj = "left outer join";
+				std::string name1, name2;
+				std::size_t itJ = relName.find(loj);
+
+				name1 = relName.substr(0, itJ-1);
+				name2 = relName.substr(itJ + loj.length() + 1, relName.length());
+
+				//parse join
+				std::istringstream ss(name1 + "," + name2);
+
+				std::string tblName;
+				while(std::getline(ss, tblName, ',')) {
+					if(tblName[0] == ' ') {
+						tblName = tblName.substr(1, tblName.length());
+					}
+
+					std::istringstream ssNA(tblName + "|");
+
+					std::string name, alias;
+					std::getline(ssNA, name, ' ');
+					std::getline(ssNA, alias, '|');
+
+					if(alias[alias.length()-1] == ' ') {
+						alias = alias.substr(0, alias.length()-1);
+					}
+
+					relNames.emplace_back(std::make_tuple(alias, name));
+				}
+			} else if(relName.find("right outer join") != std::string::npos) {
+				//set JOIN
+				join = LEFT_OUTER;
+
+				//parse join
+				std::string roj = "right outer join";
+				std::string name1, name2;
+				std::size_t itJ = relName.find(roj);
+
+				name1 = relName.substr(0, itJ-1);
+				name2 = relName.substr(itJ + roj.length() + 1, relName.length());
+
+				//parse join
+				std::istringstream ss(name1 + "," + name2);
+
+				std::string tblName;
+				while(std::getline(ss, tblName, ',')) {
+					if(tblName[0] == ' ') {
+						tblName = tblName.substr(1, tblName.length());
+					}
+
+					std::istringstream ssNA(tblName + "|");
+
+					std::string name, alias;
+					std::getline(ssNA, name, ' ');
+					std::getline(ssNA, alias, '|');
+
+					if(alias[alias.length()-1] == ' ') {
+						alias = alias.substr(0, alias.length()-1);
+					}
+
+					relNames.emplace_back(std::make_tuple(alias, name));
+				}
+			}
+		}
+	} else {
+		relNames.emplace_back(std::make_tuple(" ", relName));
+	}
+
+	//make new table name if join
+	std::string joinName;
+	if(join != NAJ) {
+		if(join == INNER) {
+			joinName = "( inner join )";
+		} else if(join == OUTER) {
+			joinName = "( outer join )";
+		} else if(join == LEFT_OUTER) {
+			joinName = "( left outer join )";
+		} else if(join == RIGHT_OUTER) {
+			joinName = "( right outer join )";			
+		}
+	}
+
+	//checks for existance of relations
+	for(std::size_t i = 0; i < relNames.size(); i++) {
+		if(relations.find(std::get<1>(relNames.at(i))) == relations.end()) {
+			std::cout << "\tERROR: Relation name [" << std::get<1>(relNames.at(i)) << "] does not exist!" << std::endl;
+			return;
+		}
 	}
 
 	//parse data into attribute tokens (var type(size), ..., var type(size))
-	if(data != "*") {
+	if(data.find("*") == std::string::npos) {
 		//parse data
 		std::string condStr;
 		std::string varStr;
@@ -119,6 +303,9 @@ void Database::select(const std::string& relName, const std::string& data) { //w
 			varNames.emplace_back(attrStr);
 		}
 
+		//gets conditions for select query
+		Relation::Condition condition;
+
 		//Build where condition
 		Relation::Attributes variables = relations.at(relName)->getAttributes();
 
@@ -130,7 +317,7 @@ void Database::select(const std::string& relName, const std::string& data) { //w
 
 			std::size_t it = condStr.find("!=");
 			attr = condStr.substr(0, it);
-			val = condStr.substr(it+2, condStr.length());		
+			val = condStr.substr(it+2, condStr.length());
 
 			for(std::size_t i = 0; i < variables.size(); i++) {
 				Relation::Attribute var = variables.at(i);
@@ -273,9 +460,166 @@ void Database::select(const std::string& relName, const std::string& data) { //w
 			}
 		}
 
-		relations.at(relName)->print(relName, varNames, std::make_tuple(attr, cond, dataC));
+		condition = std::make_tuple(attr, cond, dataC);
+
+		//Join and print new table or print initial table
+		if(join == NAJ) {
+			relations.at(relName)->print(relName, varNames, condition);
+		} else {
+			//build join condition
+			std::string alias1, attr1, attr2, alias2;
+			CONDITION joinCond = NAN;
+			if(condStr.find("!=") != std::string::npos) {
+				joinCond = NEQ;
+
+				std::size_t it = condStr.find("!=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find("=") != std::string::npos) {
+				joinCond = EQ;
+
+				std::size_t it = condStr.find("=");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			} else if(condStr.find("<=") != std::string::npos) {
+				joinCond = LSEQ;
+
+				std::size_t it = condStr.find("<=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find("<") != std::string::npos) {
+				joinCond = LS;
+
+				std::size_t it = condStr.find("<");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			} else if(condStr.find(">=") != std::string::npos) {
+				joinCond = GREQ;
+
+				std::size_t it = condStr.find(">=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find(">") != std::string::npos) {
+				joinCond = GR;
+
+				std::size_t it = condStr.find(">");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			}
+
+			//find parameters and convert from alias
+			std::size_t itD1 = attr1.find(".");
+			alias1 = attr1.substr(0, itD1);
+			attr1 = attr1.substr(itD1+1, attr1.length());
+
+			std::size_t itD2 = attr2.find(".");
+			alias2 = attr2.substr(0, itD2);
+			attr2 = attr2.substr(itD2+1, attr2.length());
+
+			//convert to rel from alias
+			std::string rel1, rel2;
+			for(int j = 0; j < relNames.size(); j++) {
+				if(std::get<0>(relNames.at(j)).find(alias1) != std::string::npos) {
+					rel1 = std::get<1>(relNames.at(j));
+				} else if(std::get<0>(relNames.at(j)).find(alias2) != std::string::npos) {
+					rel2 = std::get<1>(relNames.at(j));
+				}
+			}
+
+			//join condition
+			Relation::JoinCondition joincondition = std::make_tuple(rel1, attr1, joinCond, rel2, attr2);
+
+			//insert relations into join name
+			std::size_t idxJN = joinName.find("join");
+			joinName = joinName.substr(0,1) + rel1 + joinName.substr(2, idxJN+5) + rel2 + joinName.substr(idxJN+6, joinName.length());
+
+			//Join and print
+			Relation::Ptr relPtr1 = relations.at(std::get<1>(relNames.at(0)));
+			Relation::Ptr relPtr2 = relations.at(std::get<1>(relNames.at(1)));
+			relPtr1->join(join, joincondition, relPtr2)->print(joinName, varNames, condition);
+		}
 	} else {
-		relations.at(relName)->print(relName, std::vector<std::string>(), Relation::Condition());
+		if(join == NAJ) {
+			relations.at(relName)->print(relName, std::vector<std::string>(), Relation::Condition());
+		} else {
+			//parse data
+			std::string condStr;
+
+			std::istringstream ss(data);
+			std::getline(ss, condStr, '|');
+
+			//build join condition
+			std::string alias1, attr1, attr2, alias2;
+			CONDITION cond = NAN;
+			if(condStr.find("!=") != std::string::npos) {
+				cond = NEQ;
+
+				std::size_t it = condStr.find("!=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find("=") != std::string::npos) {
+				cond = EQ;
+
+				std::size_t it = condStr.find("=");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			} else if(condStr.find("<=") != std::string::npos) {
+				cond = LSEQ;
+
+				std::size_t it = condStr.find("<=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find("<") != std::string::npos) {
+				cond = LS;
+
+				std::size_t it = condStr.find("<");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			} else if(condStr.find(">=") != std::string::npos) {
+				cond = GREQ;
+
+				std::size_t it = condStr.find(">=");
+				attr1 = condStr.substr(0, it-2);
+				attr2 = condStr.substr(it+3, condStr.length());
+			} else if(condStr.find(">") != std::string::npos) {
+				cond = GR;
+
+				std::size_t it = condStr.find(">");
+				attr1 = condStr.substr(0, it-1);
+				attr2 = condStr.substr(it+2, condStr.length());
+			}
+
+			//find parameters and convert from alias
+			std::size_t itD1 = attr1.find(".");
+			alias1 = attr1.substr(0, itD1);
+			attr1 = attr1.substr(itD1+1, attr1.length());
+
+			std::size_t itD2 = attr2.find(".");
+			alias2 = attr2.substr(0, itD2);
+			attr2 = attr2.substr(itD2+1, attr2.length());
+
+			//convert to rel from alias
+			std::string rel1, rel2;
+			for(int j = 0; j < relNames.size(); j++) {
+				if(std::get<0>(relNames.at(j)).find(alias1) != std::string::npos) {
+					rel1 = std::get<1>(relNames.at(j));
+				} else if(std::get<0>(relNames.at(j)).find(alias2) != std::string::npos) {
+					rel2 = std::get<1>(relNames.at(j));
+				}
+			}
+
+			//join condition
+			Relation::JoinCondition joincondition = std::make_tuple(rel1, attr1, cond, rel2, attr2);
+
+			//insert relations into join name
+			std::size_t idxJN = joinName.find("join");
+			joinName = joinName.substr(0,1) + rel1 + joinName.substr(1, idxJN+4) + rel2 + joinName.substr(idxJN+5, joinName.length());
+
+			//Join and print
+			Relation::Ptr relPtr1 = relations.at(std::get<1>(relNames.at(0)));
+			Relation::Ptr relPtr2 = relations.at(std::get<1>(relNames.at(1)));
+			relPtr1->join(join, joincondition, relPtr2)->print(joinName, std::vector<std::string>(), Relation::Condition());
+		}
 	}
 }
 
